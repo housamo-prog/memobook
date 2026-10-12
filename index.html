@@ -30,7 +30,6 @@
     .font-amiri {
       font-family: 'Amiri', serif;
     }
-    /* Safe Area Padding for mobile notches and system bars */
     header {
       padding-top: max(12px, env(safe-area-inset-top));
     }
@@ -60,7 +59,7 @@
 </head>
 <body>
 
-  <!-- Top Header Bar (Safe from Notch) -->
+  <!-- Top Header Bar -->
   <header class="bg-[#3D2B1F] text-[#F3E9D2] px-4 pb-3 shadow-xl z-20 flex justify-between items-center border-b border-[#D4A373]/30">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-xl shadow-inner">
@@ -92,7 +91,7 @@
     </div>
   </div>
 
-  <!-- Bottom Action Bar (Safe from Home Indicator) -->
+  <!-- Bottom Action Bar -->
   <div class="bottom-bar bg-[#3D2B1F] px-4 pt-3 z-25 shadow-2xl border-t border-[#D4A373]/30">
     <button id="open-modal" class="w-full bg-[#D4A373] hover:bg-[#BC8A5F] text-[#3D2B1F] font-bold text-sm py-3.5 px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
       <span class="text-lg">✨</span> أضف كبسولة زمنيّة هنا
@@ -143,7 +142,7 @@
   <script>
     let userPoints = parseInt(localStorage.getItem('user_points')) || 0;
     let userLocation = [36.1993, 37.1592];
-    let mediaRecorder, audioChunks = [], audioBlob = null;
+    let mediaRecorder, audioChunks = [], audioBase64 = null;
     let selectedCoords = [...userLocation];
 
     let capsules = JSON.parse(localStorage.getItem('capsules_data')) || [
@@ -154,7 +153,8 @@
         lat: 36.1978,
         lng: 37.1580,
         unlocked: true,
-        points: 15
+        points: 15,
+        audio: null
       },
       {
         id: 2,
@@ -163,7 +163,8 @@
         lat: 36.2010,
         lng: 37.1610,
         unlocked: false,
-        points: 25
+        points: 25,
+        audio: null
       }
     ];
 
@@ -196,12 +197,22 @@
 
         const marker = L.marker([capsule.lat, capsule.lng], { icon: customIcon }).addTo(map);
 
+        let audioHtml = '';
+        if (capsule.unlocked && capsule.audio) {
+          audioHtml = `
+            <div class="mt-2 pt-2 border-t border-gray-200">
+              <span class="text-[10px] text-gray-500 block mb-1">🎧 التسجيل الصوتي للقصة:</span>
+              <audio controls src="${capsule.audio}" class="w-full h-8"></audio>
+            </div>
+          `;
+        }
+
         const popupContent = `
-          <div class="p-2 text-right" dir="rtl" style="min-width: 200px;">
+          <div class="p-2 text-right" dir="rtl" style="min-width: 210px;">
             <h4 class="font-amiri font-bold text-base text-[#3D2B1F] mb-1">${capsule.title}</h4>
             ${capsule.unlocked 
-              ? `<p class="text-xs text-gray-700 leading-relaxed mb-2">${capsule.story}</p>`
-              : `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mb-2">🔒 مغلقة! اقترب جغرافياً أو افتحها الآن لكسب +${capsule.points} نقطة.</p>
+              ? `<p class="text-xs text-gray-700 leading-relaxed mb-2">${capsule.story}</p>${audioHtml}`
+              : `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mb-2">🔒 مغلقة! افتحها الآن لكسب +${capsule.points} نقطة والاستماع لحكايتها.</p>
                  <button onclick="unlockCapsule(${capsule.id})" class="w-full text-xs bg-[#D4A373] text-white py-2 rounded-xl font-bold hover:bg-[#BC8A5F] shadow">فتح الكبسولة</button>`
             }
           </div>
@@ -255,9 +266,14 @@
 
           mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
           mediaRecorder.onstop = () => {
-            audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
-            audioPreview.src = URL.createObjectURL(audioBlob);
-            audioPreview.classList.remove('hidden');
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.readAsDataURL(audioBlob);
+            reader.onloadend = () => {
+              audioBase64 = reader.result;
+              audioPreview.src = audioBase64;
+              audioPreview.classList.remove('hidden');
+            };
           };
 
           mediaRecorder.start();
@@ -285,7 +301,8 @@
         lat: selectedCoords[0],
         lng: selectedCoords[1],
         unlocked: true,
-        points: 20
+        points: 20,
+        audio: audioBase64
       };
 
       capsules.push(newCapsule);
@@ -294,9 +311,10 @@
       renderCapsules();
 
       e.target.reset();
+      audioBase64 = null;
       audioPreview.classList.add('hidden');
       modal.classList.add('hidden');
-      alert("✨ تم غرس الكبسولة بنجاح في الخريطة التاريخية!");
+      alert("✨ تم غرس الكبسولة مع التسجيل الصوتي بنجاح!");
     });
 
     let userMarker = null;
