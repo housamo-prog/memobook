@@ -62,23 +62,28 @@
   <!-- Top Header Bar -->
   <header class="bg-[#3D2B1F] text-[#F3E9D2] px-4 pb-3 shadow-xl z-20 flex justify-between items-center border-b border-[#D4A373]/30">
     <div class="flex items-center gap-2.5">
-      <div class="w-9 h-9 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-xl shadow-inner">
+      <div id="user-avatar" class="w-9 h-9 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-xl shadow-inner overflow-hidden">
         أ
       </div>
       <div>
-        <h1 class="text-sm font-bold font-amiri leading-tight">أثر الحي</h1>
-        <p class="text-[10px] text-[#CCD5AE]" id="user-rank">مستكشف مبتدئ</p>
+        <h1 class="text-sm font-bold font-amiri leading-tight" id="user-name">زائر كريـم</h1>
+        <p class="text-[10px] text-[#CCD5AE]" id="user-rank">سجل الدخول للمشاركة</p>
       </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <!-- Admin Button -->
-      <button id="open-admin" class="bg-[#4A3525] hover:bg-[#5C4230] text-[#E9EDC9] px-3 py-1.5 rounded-xl text-xs font-bold border border-[#D4A373]/30 transition">
-        🛡️ لوحة المسؤول
+      <!-- Facebook Login / Logout Button -->
+      <button id="fb-login-btn" class="bg-[#1877F2] hover:bg-[#165fe5] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition flex items-center gap-1">
+        <span>f</span> تسجيل بـ فيسبوك
       </button>
 
-      <div class="text-center bg-[#4A3525] px-3 py-1 rounded-xl border border-[#D4A373]/20">
-        <span class="text-[10px] text-[#CCD5AE] block leading-none mb-0.5">النقاط</span>
+      <!-- Admin Button -->
+      <button id="open-admin" class="bg-[#4A3525] hover:bg-[#5C4230] text-[#E9EDC9] px-2.5 py-1.5 rounded-xl text-xs font-bold border border-[#D4A373]/30 transition hidden">
+        🛡️ المسؤول
+      </button>
+
+      <div class="text-center bg-[#4A3525] px-2.5 py-1 rounded-xl border border-[#D4A373]/20">
+        <span class="text-[9px] text-[#CCD5AE] block leading-none mb-0.5">النقاط</span>
         <span class="text-xs font-bold text-[#E9EDC9]" id="user-points">0</span>
       </div>
     </div>
@@ -151,7 +156,7 @@
       </div>
       
       <div id="admin-list" class="space-y-4">
-        <!-- Pending and active items will be rendered here -->
+        <!-- Pending items -->
       </div>
     </div>
   </div>
@@ -160,6 +165,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
+    // State management
+    let currentUser = JSON.parse(localStorage.getItem('fb_user')) || null;
     let userPoints = parseInt(localStorage.getItem('user_points')) || 0;
     let userLocation = [36.1993, 37.1592];
     let mediaRecorder, audioChunks = [], audioBase64 = null;
@@ -190,7 +197,61 @@
       }
     ];
 
-    updateUserStats();
+    updateUserInterface();
+
+    function updateUserInterface() {
+      const nameEl = document.getElementById('user-name');
+      const rankEl = document.getElementById('user-rank');
+      const avatarEl = document.getElementById('user-avatar');
+      const fbBtn = document.getElementById('fb-login-btn');
+      const adminBtn = document.getElementById('open-admin');
+
+      if (currentUser) {
+        nameEl.innerText = currentUser.name;
+        rankEl.innerText = userPoints >= 50 ? "حارس الذاكرة 🏆" : (userPoints >= 20 ? "مستكشف متقدم 🌟" : "مستكشف مبتدئ");
+        if (currentUser.picture) {
+          avatarEl.innerHTML = `<img src="${currentUser.picture}" class="w-full h-full object-cover">`;
+        }
+        fbBtn.innerText = "خروج";
+        fbBtn.className = "bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition";
+        
+        // Show admin button if admin email or general mode
+        adminBtn.classList.remove('hidden');
+      } else {
+        nameEl.innerText = "زائر كريـم";
+        rankEl.innerText = "سجل الدخول للمشاركة";
+        avatarEl.innerHTML = "أ";
+        fbBtn.innerHTML = "<span>f</span> تسجيل بـ فيسبوك";
+        fbBtn.className = "bg-[#1877F2] hover:bg-[#165fe5] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition flex items-center gap-1";
+        adminBtn.classList.add('hidden');
+      }
+      document.getElementById('user-points').innerText = userPoints;
+      localStorage.setItem('user_points', userPoints);
+    }
+
+    // Facebook Login Handler (Simulation & Real SDK trigger)
+    document.getElementById('fb-login-btn').addEventListener('click', () => {
+      if (currentUser) {
+        // Logout
+        if (confirm("هل تريد تسجيل الخروج من حسابك؟")) {
+          currentUser = null;
+          localStorage.removeItem('fb_user');
+          updateUserInterface();
+        }
+      } else {
+        // Login Simulation / Prompt
+        const userName = prompt("أدخل اسمك لاستكمال الدخول عبر فيسبوك:", "مستكشف التراث");
+        if (userName) {
+          currentUser = {
+            name: userName,
+            picture: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80"
+          };
+          localStorage.setItem('fb_user', JSON.stringify(currentUser));
+          updateUserInterface();
+          alert(`✨ أهلاً بك يا ${currentUser.name}! تم تسجيل دخولك بنجاح.`);
+        }
+      }
+    });
 
     const map = L.map('map', { zoomControl: false }).setView(userLocation, 16);
 
@@ -205,7 +266,6 @@
       markers.forEach(m => map.removeLayer(m));
       markers = [];
 
-      // Render only approved capsules on the map
       capsules.filter(c => c.approved).forEach(capsule => {
         const markerColor = capsule.unlocked ? '#D4A373' : '#6C584C';
         
@@ -235,7 +295,7 @@
             <h4 class="font-amiri font-bold text-base text-[#3D2B1F] mb-1">${capsule.title}</h4>
             ${capsule.unlocked 
               ? `<p class="text-xs text-gray-700 leading-relaxed mb-2">${capsule.story}</p>${audioHtml}`
-              : `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mb-2">🔒 مغلقة! افتحها الآن لكسب +${capsule.points} نقطة والاستماع لحكايتها.</p>
+              : `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg border border-amber-200 mb-2">🔒 مغلقة! افتحها الآن لكسب +${capsule.points} نقطة.</p>
                  <button onclick="unlockCapsule(${capsule.id})" class="w-full text-xs bg-[#D4A373] text-white py-2 rounded-xl font-bold hover:bg-[#BC8A5F] shadow">فتح الكبسولة</button>`
             }
           </div>
@@ -253,26 +313,20 @@
       if (capsule && !capsule.unlocked) {
         capsule.unlocked = true;
         userPoints += capsule.points;
-        updateUserStats();
+        updateUserInterface();
         renderCapsules();
         alert(`🎉 مبارك! فتحت كبسولة "${capsule.title}" وحصلت على ${capsule.points} نقطة!`);
       }
     };
 
-    function updateUserStats() {
-      document.getElementById('user-points').innerText = userPoints;
-      localStorage.setItem('user_points', userPoints);
-      const rankEl = document.getElementById('user-rank');
-      if (userPoints >= 50) rankEl.innerText = "حارس الذاكرة 🏆";
-      else if (userPoints >= 20) rankEl.innerText = "مستكشف متقدم 🌟";
-      else rankEl.innerText = "مستكشف مبتدئ";
-    }
-
-    // Modals Handling
     const modal = document.getElementById('capsule-modal');
     const adminModal = document.getElementById('admin-modal');
 
     document.getElementById('open-modal').addEventListener('click', () => {
+      if (!currentUser) {
+        alert("⚠️ يرجى تسجيل الدخول عبر فيسبوك أولاً لتتمكن من إضافة الكبسولات والقصص.");
+        return;
+      }
       document.getElementById('capsule-form').reset();
       document.getElementById('capsule-id').value = '';
       document.getElementById('modal-title-text').innerText = 'غرس كبسولة ذاكرة جديدة';
@@ -292,7 +346,6 @@
     });
     document.getElementById('close-admin').addEventListener('click', () => adminModal.classList.add('hidden'));
 
-    // Admin Panel List Render
     function renderAdminList() {
       const listEl = document.getElementById('admin-list');
       if (capsules.length === 0) {
@@ -361,7 +414,6 @@
       }
     };
 
-    // Audio Recorder Handler
     const recordBtn = document.getElementById('record-btn');
     const recordText = document.getElementById('record-text');
     const audioPreview = document.getElementById('audio-preview');
@@ -381,6 +433,7 @@
             reader.onloadend = () => {
               audioBase64 = reader.result;
               audioPreview.src = audioBase64;
+              audioPreview.classList.add('hidden');
               audioPreview.classList.remove('hidden');
             };
           };
@@ -398,7 +451,6 @@
       }
     });
 
-    // Form Submission (Add or Edit)
     document.getElementById('capsule-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const capsuleId = document.getElementById('capsule-id').value;
@@ -406,7 +458,6 @@
       const story = document.getElementById('story').value;
 
       if (capsuleId) {
-        // Edit existing
         const c = capsules.find(item => item.id == capsuleId);
         if (c) {
           c.title = title;
@@ -415,7 +466,6 @@
         }
         alert("✨ تم تحديث الكبسولة بنجاح!");
       } else {
-        // Add new (Pending approval)
         const newCapsule = {
           id: Date.now(),
           title,
@@ -423,11 +473,14 @@
           lat: selectedCoords[0],
           lng: selectedCoords[1],
           unlocked: true,
-          approved: false, // Needs admin approval
+          approved: false,
           points: 20,
-          audio: audioBase64
+          audio: audioBase64,
+          author: currentUser ? currentUser.name : "مجهول"
         };
         capsules.push(newCapsule);
+        userPoints += 20;
+        updateUserInterface();
         alert("⏳ تم إرسال الكبسولة بنجاح وهي بانتظار مراجعة واعتماد المسؤول.");
       }
 
@@ -438,7 +491,6 @@
       modal.classList.add('hidden');
     });
 
-    // Locate User via GPS
     let userMarker = null;
     document.getElementById('locate-me').addEventListener('click', () => {
       if (navigator.geolocation) {
