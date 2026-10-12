@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>أثر الحي - ذاكرة حية للأحياء</title>
   
   <!-- Tailwind CSS & Google Fonts -->
@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
   
-  <!-- Leaflet CSS (Interactive Maps) -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
@@ -21,17 +21,30 @@
       color: #2C2416;
       margin: 0;
       padding: 0;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
     .font-amiri {
       font-family: 'Amiri', serif;
     }
+    /* Safe Area Padding for mobile notches and system bars */
+    header {
+      padding-top: max(12px, env(safe-area-inset-top));
+    }
+    .bottom-bar {
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    #map-container {
+      flex: 1;
+      width: 100%;
+      position: relative;
+    }
     #map {
-      height: 100vh;
-      width: 100vw;
-      position: absolute;
-      top: 0;
-      left: 0;
+      height: 100%;
+      width: 100%;
       z-index: 1;
     }
     .leaflet-popup-content-wrapper {
@@ -45,13 +58,10 @@
     }
   </style>
 </head>
-<body class="relative h-screen w-screen">
+<body>
 
-  <!-- Fullscreen Interactive Map -->
-  <div id="map"></div>
-
-  <!-- Top Floating Header (With Safe Area Spacing) -->
-  <header class="absolute top-4 right-4 left-4 z-10 flex justify-between items-center bg-[#3D2B1F]/95 backdrop-blur-md text-[#F3E9D2] px-4 py-3 rounded-2xl shadow-xl border border-[#D4A373]/30">
+  <!-- Top Header Bar (Safe from Notch) -->
+  <header class="bg-[#3D2B1F] text-[#F3E9D2] px-4 pb-3 shadow-xl z-20 flex justify-between items-center border-b border-[#D4A373]/30">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-xl shadow-inner">
         أ
@@ -70,24 +80,28 @@
     </div>
   </header>
 
-  <!-- Floating Control Buttons (Bottom Right - Adjusted Spacing) -->
-  <div class="absolute bottom-24 right-4 z-10 flex flex-col gap-3">
-    <!-- Locate Me Button -->
-    <button id="locate-me" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-800 rounded-full shadow-xl border border-gray-200 flex items-center justify-center text-xl transition active:scale-95">
-      📍
-    </button>
+  <!-- Map Container -->
+  <div id="map-container">
+    <div id="map"></div>
+
+    <!-- Floating Location Button -->
+    <div class="absolute bottom-4 right-4 z-10">
+      <button id="locate-me" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-800 rounded-full shadow-xl border border-gray-200 flex items-center justify-center text-xl transition active:scale-95">
+        📍
+      </button>
+    </div>
   </div>
 
-  <!-- Floating Action Button to Open Add Modal (Bottom Center - Adjusted Spacing) -->
-  <div class="absolute bottom-6 left-4 right-4 z-10">
-    <button id="open-modal" class="w-full bg-[#3D2B1F] hover:bg-[#4A3525] text-[#F3E9D2] font-bold text-sm py-3.5 px-6 rounded-2xl shadow-2xl border border-[#D4A373]/40 flex items-center justify-center gap-2 transition active:scale-95">
+  <!-- Bottom Action Bar (Safe from Home Indicator) -->
+  <div class="bottom-bar bg-[#3D2B1F] px-4 pt-3 z-25 shadow-2xl border-t border-[#D4A373]/30">
+    <button id="open-modal" class="w-full bg-[#D4A373] hover:bg-[#BC8A5F] text-[#3D2B1F] font-bold text-sm py-3.5 px-6 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95">
       <span class="text-lg">✨</span> أضف كبسولة زمنيّة هنا
     </button>
   </div>
 
-  <!-- Add Capsule Modal (Hidden by default) -->
+  <!-- Add Capsule Modal -->
   <div id="capsule-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="bg-[#FFFDF9] w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-[#E6DCC8] max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+    <div class="bg-[#FFFDF9] w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-[#E6DCC8] max-h-[90vh] overflow-y-auto">
       
       <div class="flex justify-between items-center mb-4 border-b border-gray-200 pb-3">
         <h2 class="font-amiri text-xl font-bold text-[#3D2B1F]">غرس كبسولة ذاكرة جديدة</h2>
@@ -105,7 +119,6 @@
           <textarea id="story" rows="3" required placeholder="اكتب هنا التفاصيل والحكاية المنسية..." class="w-full text-xs p-3 rounded-xl border border-gray-300 focus:outline-none focus:border-[#D4A373] bg-[#FAF6EE]/50"></textarea>
         </div>
 
-        <!-- Audio Recorder Section -->
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">تسجيل صوتي (اختياري - حكاية صوتية)</label>
           <div class="flex items-center gap-2">
@@ -128,9 +141,8 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // State management & LocalStorage sync
     let userPoints = parseInt(localStorage.getItem('user_points')) || 0;
-    let userLocation = [36.1993, 37.1592]; // Aleppo Old City Default
+    let userLocation = [36.1993, 37.1592];
     let mediaRecorder, audioChunks = [], audioBlob = null;
     let selectedCoords = [...userLocation];
 
@@ -157,7 +169,6 @@
 
     updateUserStats();
 
-    // Initialize Map
     const map = L.map('map', { zoomControl: false }).setView(userLocation, 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -223,7 +234,6 @@
       else rankEl.innerText = "مستكشف مبتدئ";
     }
 
-    // Modal Triggers
     const modal = document.getElementById('capsule-modal');
     document.getElementById('open-modal').addEventListener('click', () => {
       const center = map.getCenter();
@@ -232,7 +242,6 @@
     });
     document.getElementById('close-modal').addEventListener('click', () => modal.classList.add('hidden'));
 
-    // Audio Recorder Handler
     const recordBtn = document.getElementById('record-btn');
     const recordText = document.getElementById('record-text');
     const audioPreview = document.getElementById('audio-preview');
@@ -264,7 +273,6 @@
       }
     });
 
-    // Form Submission
     document.getElementById('capsule-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('title').value;
@@ -291,7 +299,6 @@
       alert("✨ تم غرس الكبسولة بنجاح في الخريطة التاريخية!");
     });
 
-    // Locate User via GPS
     let userMarker = null;
     document.getElementById('locate-me').addEventListener('click', () => {
       if (navigator.geolocation) {
