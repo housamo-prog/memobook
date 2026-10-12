@@ -50,10 +50,10 @@
   <!-- Fullscreen Interactive Map -->
   <div id="map"></div>
 
-  <!-- Top Floating Header (Stats & Rank) -->
-  <header class="absolute top-4 right-4 left-4 z-10 flex justify-between items-center bg-[#3D2B1F]/90 backdrop-blur-md text-[#F3E9D2] px-4 py-2.5 rounded-2xl shadow-lg border border-[#D4A373]/30">
-    <div class="flex items-center gap-2">
-      <div class="w-8 h-8 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-xl shadow-inner">
+  <!-- Top Floating Header (With Safe Area Spacing) -->
+  <header class="absolute top-4 right-4 left-4 z-10 flex justify-between items-center bg-[#3D2B1F]/95 backdrop-blur-md text-[#F3E9D2] px-4 py-3 rounded-2xl shadow-xl border border-[#D4A373]/30">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-xl shadow-inner">
         أ
       </div>
       <div>
@@ -64,23 +64,23 @@
 
     <div class="flex items-center gap-3">
       <div class="text-center bg-[#4A3525] px-3 py-1 rounded-xl border border-[#D4A373]/20">
-        <span class="text-[10px] text-[#CCD5AE] block">النقاط</span>
+        <span class="text-[10px] text-[#CCD5AE] block leading-none mb-0.5">النقاط</span>
         <span class="text-xs font-bold text-[#E9EDC9]" id="user-points">0</span>
       </div>
     </div>
   </header>
 
-  <!-- Floating Control Buttons (Bottom Right & Left) -->
-  <div class="absolute bottom-6 right-4 z-10 flex flex-col gap-3">
+  <!-- Floating Control Buttons (Bottom Right - Adjusted Spacing) -->
+  <div class="absolute bottom-24 right-4 z-10 flex flex-col gap-3">
     <!-- Locate Me Button -->
-    <button id="locate-me" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-800 rounded-full shadow-lg border border-gray-200 flex items-center justify-center text-xl transition active:scale-95">
+    <button id="locate-me" class="w-12 h-12 bg-white hover:bg-gray-50 text-gray-800 rounded-full shadow-xl border border-gray-200 flex items-center justify-center text-xl transition active:scale-95">
       📍
     </button>
   </div>
 
-  <!-- Floating Action Button to Open Add Modal -->
-  <div class="absolute bottom-6 left-4 right-20 z-10">
-    <button id="open-modal" class="w-full bg-[#3D2B1F] hover:bg-[#4A3525] text-[#F3E9D2] font-bold text-sm py-3.5 px-6 rounded-2xl shadow-xl border border-[#D4A373]/40 flex items-center justify-center gap-2 transition active:scale-95">
+  <!-- Floating Action Button to Open Add Modal (Bottom Center - Adjusted Spacing) -->
+  <div class="absolute bottom-6 left-4 right-4 z-10">
+    <button id="open-modal" class="w-full bg-[#3D2B1F] hover:bg-[#4A3525] text-[#F3E9D2] font-bold text-sm py-3.5 px-6 rounded-2xl shadow-2xl border border-[#D4A373]/40 flex items-center justify-center gap-2 transition active:scale-95">
       <span class="text-lg">✨</span> أضف كبسولة زمنيّة هنا
     </button>
   </div>
@@ -226,7 +226,6 @@
     // Modal Triggers
     const modal = document.getElementById('capsule-modal');
     document.getElementById('open-modal').addEventListener('click', () => {
-      // Use center of current map view as new capsule location
       const center = map.getCenter();
       selectedCoords = [center.lat, center.lng];
       modal.classList.remove('hidden');
@@ -286,7 +285,6 @@
       updateUserStats();
       renderCapsules();
 
-      // Reset and close
       e.target.reset();
       audioPreview.classList.add('hidden');
       modal.classList.add('hidden');
@@ -316,7 +314,6 @@
       }
     });
 
-    // Initial Map Render
     renderCapsules();
   </script>
 </body>
