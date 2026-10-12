@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أثر الحي - ذاكرة حية للأحياء</title>
+  
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet CSS (Interactive Maps) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background-color: #FAF6EE;
+      color: #2C2416;
+    }
+    .font-amiri {
+      font-family: 'Amiri', serif;
+    }
+    #map {
+      height: calc(100vh - 80px);
+      width: 100%;
+      border-radius: 1rem;
+      z-index: 10;
+    }
+    .leaflet-popup-content-wrapper {
+      background-color: #FFFDF9;
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    .leaflet-popup-tip {
+      background-color: #FFFDF9;
+    }
+  </style>
+</head>
+<body class="bg-[#FAF6EE] min-h-screen flex flex-col">
+
+  <!-- Header / Navigation -->
+  <header class="bg-[#3D2B1F] text-[#F3E9D2] px-6 py-4 shadow-md flex justify-between items-center z-50">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-[#D4A373] text-[#3D2B1F] flex items-center justify-center font-bold font-amiri text-2xl shadow-inner">
+        أ
+      </div>
+      <div>
+        <h1 class="text-xl font-bold font-amiri tracking-wide">أثر الحي</h1>
+        <p class="text-xs text-[#CCD5AE]">ذاكرة حية للأحياء والتراث المنسي</p>
+      </div>
+    </div>
+
+    <!-- Gamification & User Badge -->
+    <div class="flex items-center gap-4 bg-[#4A3525] px-4 py-2 rounded-xl border border-[#D4A373]/30">
+      <div class="text-right">
+        <div class="text-xs text-[#CCD5AE]">رتبتك الحالية</div>
+        <div class="text-sm font-bold text-[#E9EDC9]" id="user-rank">مستكشف مبتدئ</div>
+      </div>
+      <div class="w-px h-8 bg-[#D4A373]/30"></div>
+      <div class="text-center">
+        <div class="text-xs text-[#CCD5AE]">النقاط</div>
+        <div class="text-sm font-bold text-[#E9EDC9]" id="user-points">0</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 max-w-7xl mx-auto w-full">
+    
+    <!-- Left Panel: Add Capsule & Stats -->
+    <section class="md:col-span-1 flex flex-col gap-4 order-2 md:order-1">
+      
+      <!-- Quick Action Card -->
+      <div class="bg-white p-5 rounded-2xl border border-[#E6DCC8] shadow-sm">
+        <h2 class="font-amiri text-xl font-bold text-[#3D2B1F] mb-2">أضف كبسولة زمنيّة</h2>
+        <p class="text-xs text-gray-600 mb-4 leading-relaxed">
+          وثّق حكاية، صورة قديمة، أو تسجيل صوتي في موقعك الحالي ليتعرف عليها أبناء الحي والمستكشفون.
+        </p>
+
+        <form id="capsule-form" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">عنوان القصة / الموقع</label>
+            <input type="text" id="title" required placeholder="مثال: دكان أبو أحمد - ساحة الحطب" class="w-full text-xs p-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[#D4A373]">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">تفاصيل القصة أو الذكرى</label>
+            <textarea id="story" rows="3" required placeholder="اكتب هنا القصة المنسية عن هذا المكان..." class="w-full text-xs p-2.5 rounded-lg border border-gray-300 focus:outline-none focus:border-[#D4A373]"></textarea>
+          </div>
+
+          <!-- Audio Recorder Widget -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">تسجيل صوتي (اختياري)</label>
+            <div class="flex items-center gap-2">
+              <button type="button" id="record-btn" class="flex-1 py-2 px-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg border border-gray-300 flex items-center justify-center gap-1">
+                <span>🎤</span> <span id="record-text">بدء التسجيل الصوتيّ</span>
+              </button>
+            </div>
+            <audio id="audio-preview" controls class="hidden w-full mt-2 h-8"></audio>
+          </div>
+
+          <button type="submit" class="w-full py-2.5 bg-[#D4A373] hover:bg-[#BC8A5F] text-white font-bold text-xs rounded-lg transition shadow-md">
+            غرس الكبسولة في الخريطة (+20 نقطة)
+          </button>
+        </form>
+      </div>
+
+      <!-- Exploration Status -->
+      <div class="bg-[#E9EDC9] p-4 rounded-2xl border border-[#CCD5AE]">
+        <h3 class="font-amiri text-lg font-bold text-[#3D2B1F] mb-1">🎯 مهمتك اليوم</h3>
+        <p class="text-xs text-[#4A3525] leading-relaxed">
+          اقترب جغرافياً من الكبسولات المغلقة للوصول للمحتوى الصوتي والتاريخي المخبأ.
+        </p>
+      </div>
+
+    </section>
+
+    <!-- Right Panel: Interactive Map -->
+    <section class="md:col-span-2 relative order-1 md:order-2">
+      <div id="map" class="shadow-lg border border-[#E6DCC8]"></div>
+
+      <!-- Map Controls Overlay -->
+      <div class="absolute bottom-6 right-6 z-20 flex flex-col gap-2">
+        <button id="locate-me" class="bg-white hover:bg-gray-50 text-gray-800 text-xs font-bold py-2.5 px-4 rounded-xl shadow-md border border-gray-200 flex items-center gap-2">
+          <span>📍</span> تحديد موقعي الحالي
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // State management
+    let userPoints = 0;
+    let userLocation = [36.1993, 37.1592]; // Aleppo Old City Default
+    let mediaRecorder, audioChunks = [], audioBlob = null;
+
+    // Initial Capsules Data
+    let capsules = [
+      {
+        id: 1,
+        title: "حكايات خان الشونة",
+        story: "تأسس الخان في القرن السادس عشر وكان ملتقى للتجار والرحالة. هنا كانت تُعقد صفقات التوابل والحرير.",
+        lat: 36.1978,
+        lng: 37.1580,
+        unlocked: true,
+        points: 15
+      },
+      {
+        id: 2,
+        title: "سرّ زقاق الياسمين",
+        story: "هذا الزقاق شهد أول ورشة لصناعة صابون الغار على الطريقة التقليدية منذ أربعة عقود.",
+        lat: 36.2010,
+        lng: 37.1610,
+        unlocked: false,
+        points: 25
+      }
+    ];
+
+    // Initialize Map
+    const map = L.map('map').setView(userLocation, 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let markers = [];
+
+    function renderCapsules() {
+      // Clear existing markers
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      capsules.forEach(capsule => {
+        const markerColor = capsule.unlocked ? '#D4A373' : '#6C584C';
+        
+        const customIcon = L.divIcon({
+          className: 'custom-pin',
+          html: `<div style="background-color: ${markerColor}; width: 28px; height: 28px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); flex items-center justify-center; text-align: center; color: white; font-size: 12px; font-weight: bold; line-height: 22px;">
+                  ${capsule.unlocked ? '📖' : '🔒'}
+                 </div>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker([capsule.lat, capsule.lng], { icon: customIcon }).addTo(map);
+
+        const popupContent = `
+          <div class="p-2 text-right" dir="rtl">
+            <h4 class="font-amiri font-bold text-base text-[#3D2B1F] mb-1">${capsule.title}</h4>
+            ${capsule.unlocked 
+              ? `<p class="text-xs text-gray-700 leading-relaxed mb-2">${capsule.story}</p>`
+              : `<p class="text-xs text-amber-800 bg-amber-50 p-2 rounded border border-amber-200 mb-2">🔒 هذه الكبسولة مغلقة! اقترب من الموقع لفتحها والحصول على +${capsule.points} نقطة.</p>
+                 <button onclick="unlockCapsule(${capsule.id})" class="w-full text-xs bg-[#D4A373] text-white py-1.5 rounded font-bold hover:bg-[#BC8A5F]">محاكاة الوصول والفتح</button>`
+            }
+          </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+      });
+    }
+
+    // Unlock Capsule Logic
+    window.unlockCapsule = function(id) {
+      const capsule = capsules.find(c => c.id === id);
+      if (capsule && !capsule.unlocked) {
+        capsule.unlocked = true;
+        userPoints += capsule.points;
+        updateUserStats();
+        renderCapsules();
+        alert(`🎉 مبارك! فتحت كبسولة "${capsule.title}" وحصلت على ${capsule.points} نقطة!`);
+      }
+    };
+
+    function updateUserStats() {
+      document.getElementById('user-points').innerText = userPoints;
+      const rankEl = document.getElementById('user-rank');
+      if (userPoints >= 50) rankEl.innerText = "حارس الذاكرة 🏆";
+      else if (userPoints >= 20) rankEl.innerText = "مستكشف متقدم 🌟";
+      else rankEl.innerText = "مستكشف مبتدئ";
+    }
+
+    // Audio Recorder Handler
+    const recordBtn = document.getElementById('record-btn');
+    const recordText = document.getElementById('record-text');
+    const audioPreview = document.getElementById('audio-preview');
+
+    recordBtn.addEventListener('click', async () => {
+      if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+        mediaRecorder.onstop = () => {
+          audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+          audioPreview.src = URL.createObjectURL(audioBlob);
+          audioPreview.classList.remove('hidden');
+        };
+
+        mediaRecorder.start();
+        recordText.innerText = "جاري التسجيل... (اضغط للإيقاف)";
+        recordBtn.classList.add('bg-red-100', 'text-red-700');
+      } else {
+        mediaRecorder.stop();
+        recordText.innerText = "إعادة التسجيل الصوتي";
+        recordBtn.classList.remove('bg-red-100', 'text-red-700');
+      }
+    });
+
+    // Form Submission
+    document.getElementById('capsule-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('title').value;
+      const story = document.getElementById('story').value;
+
+      const newCapsule = {
+        id: Date.now(),
+        title,
+        story,
+        lat: userLocation[0] + (Math.random() - 0.5) * 0.003,
+        lng: userLocation[1] + (Math.random() - 0.5) * 0.003,
+        unlocked: true,
+        points: 20
+      };
+
+      capsules.push(newCapsule);
+      userPoints += 20;
+      updateUserStats();
+      renderCapsules();
+
+      // Reset form
+      e.target.reset();
+      audioPreview.classList.add('hidden');
+      alert("✨ تم إضافة الكبسولة بنجاح إلى الخريطة التفاعلية!");
+    });
+
+    // Locate User
+    document.getElementById('locate-me').addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          userLocation = [pos.coords.latitude, pos.coords.longitude];
+          map.setView(userLocation, 17);
+          L.marker(userLocation).addTo(map).bindPopup("أنت هنا 📍").openPopup();
+        });
+      }
+    });
+
+    // Render Initial Map
+    renderCapsules();
+  </script>
+</body>
+</html>
